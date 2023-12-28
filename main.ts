@@ -1,20 +1,31 @@
 namespace SpriteKind {
     export const Turret = SpriteKind.create()
     export const Indicator = SpriteKind.create()
+    export const Launcher = SpriteKind.create()
+    export const Barrel = SpriteKind.create()
+    export const RocketCalibre = SpriteKind.create()
+    export const SmallCalibre = SpriteKind.create()
+    export const Explosion = SpriteKind.create()
 }
-function generateLaser (laserType: number, targetSprite: Sprite, shootingSprite: Sprite, length: number, steps: number, lifespan: number) {
+controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
+    playerRow += -1
+    setPlayerTileMapPosition()
+})
+controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
+    towerType += 1
+    towerType = towerType % 2
+    displayTilePlacementIndicator(towerType)
+})
+function generateBarrel (barrelType: number, targetSprite: Sprite, shootingSprite: Sprite, length: number, steps: number, lifespan: number) {
     if (targetSprite != shootingSprite) {
         for (let index = 0; index <= length; index++) {
             if (index % steps == 0) {
-                barrelSprite = sprites.create(img`
-                    2 2 
-                    2 2 
-                    `, SpriteKind.Food)
+                barrelSprite = sprites.create(barrelSpriteImageList[barrelType], SpriteKind.Barrel)
                 barrelSprite.setPosition(shootingSprite.x, shootingSprite.y)
                 spriteutils.placeAngleFrom(
                 barrelSprite,
                 spriteutils.angleFrom(shootingSprite, targetSprite),
-                index,
+                index + steps,
                 shootingSprite
                 )
                 barrelSprite.z = 15
@@ -24,10 +35,7 @@ function generateLaser (laserType: number, targetSprite: Sprite, shootingSprite:
     } else {
         for (let index = 0; index <= length; index++) {
             if (index % steps == 0) {
-                barrelSprite = sprites.create(img`
-                    2 2 
-                    2 2 
-                    `, SpriteKind.Food)
+                barrelSprite = sprites.create(barrelSpriteImageList[barrelType], SpriteKind.Barrel)
                 barrelSprite.setPosition(shootingSprite.x, shootingSprite.y - index)
                 barrelSprite.z = 15
                 barrelSprite.lifespan = lifespan
@@ -35,19 +43,10 @@ function generateLaser (laserType: number, targetSprite: Sprite, shootingSprite:
         }
     }
 }
-controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
-    playerRow += -1
-    setPlayerTileMapPosition(playerColumn, playerRow)
-})
-controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
-    towerType += 1
-    towerType = towerType % 2
-    displayTilePlacementIndicator(towerType)
-})
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     fireRate = 500 - sprites.allOfKind(SpriteKind.Turret).length * 10
     if (tiles.tileAtLocationEquals(playerSprite.tilemapLocation(), assets.tile`transparency16`) && emptyTile) {
-        generateTower(1)
+        generateTower(towerType)
     }
 })
 function generatePlayer () {
@@ -80,7 +79,7 @@ scene.onOverlapTile(SpriteKind.Enemy, sprites.dungeon.hazardLava1, function (spr
 })
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
     playerColumn += -1
-    setPlayerTileMapPosition(playerColumn, playerRow)
+    setPlayerTileMapPosition()
 })
 statusbars.onZero(StatusBarKind.EnemyHealth, function (status) {
     sprites.destroy(status.spriteAttachedTo())
@@ -107,29 +106,35 @@ scene.onHitWall(SpriteKind.Enemy, function (sprite, location) {
 })
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
     playerColumn += 1
-    setPlayerTileMapPosition(playerColumn, playerRow)
+    setPlayerTileMapPosition()
 })
-function setPlayerTileMapPosition (column: number, row: number) {
-    tiles.placeOnTile(playerSprite, tiles.getTileLocation(column % 16, row % 16))
-}
-scene.onOverlapTile(SpriteKind.Enemy, sprites.vehicle.roadHorizontal, function (sprite, location) {
-    if (!(tiles.tileAtLocationIsWall(location))) {
-        sprite.setFlag(SpriteFlag.GhostThroughWalls, false)
-    }
-})
-controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
-    playerRow += 1
-    setPlayerTileMapPosition(playerColumn, playerRow)
-})
-controller.menu.onEvent(ControllerButtonEvent.Pressed, function () {
-    playerSprite.sayText("" + playerSprite.tilemapLocation().column + ", " + playerSprite.tilemapLocation().row)
-    info.setScore(sprites.allOfKind(SpriteKind.Player).length)
-})
-sprites.onOverlap(SpriteKind.Player, SpriteKind.Turret, function (sprite, otherSprite) {
-	
-})
-function generateProjectile (projectileType: number, targetSprite: Sprite, shootingSprite: Sprite) {
-    projectile = sprites.create(img`
+sprites.onOverlap(SpriteKind.RocketCalibre, SpriteKind.Enemy, function (sprite, otherSprite) {
+    statusbars.getStatusBarAttachedTo(StatusBarKind.EnemyHealth, otherSprite).value += -5
+    sprites.destroy(sprite)
+    explosionSprite = sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.Explosion)
+    explosionSprite.setPosition(otherSprite.x, otherSprite.y)
+    explosionSprite.lifespan = 400
+    explosionSprite.setScale(5, ScaleAnchor.Middle)
+    animation.runImageAnimation(
+    explosionSprite,
+    [img`
         . . . . . . . . . . . . . . . . 
         . . . . . . . . . . . . . . . . 
         . . . . . . . . . . . . . . . . 
@@ -146,11 +151,99 @@ function generateProjectile (projectileType: number, targetSprite: Sprite, shoot
         . . . . . . . . . . . . . . . . 
         . . . . . . . . . . . . . . . . 
         . . . . . . . . . . . . . . . . 
-        `, SpriteKind.Projectile)
+        `,img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . 4 . . . . . 
+        . . . . 2 . . . . 4 4 . . . . . 
+        . . . . 2 4 . . 4 5 4 . . . . . 
+        . . . . . 2 4 d 5 5 4 . . . . . 
+        . . . . . 2 5 5 5 5 4 . . . . . 
+        . . . . . . 2 5 5 5 5 4 . . . . 
+        . . . . . . 2 5 4 2 4 4 . . . . 
+        . . . . . . 4 4 . . 2 4 4 . . . 
+        . . . . . 4 4 . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `,img`
+        . 3 . . . . . . . . . . . 4 . . 
+        . 3 3 . . . . . . . . . 4 4 . . 
+        . 3 d 3 . . 4 4 . . 4 4 d 4 . . 
+        . . 3 5 3 4 5 5 4 4 d d 4 4 . . 
+        . . 3 d 5 d 1 1 d 5 5 d 4 4 . . 
+        . . 4 5 5 1 1 1 1 5 1 1 5 4 . . 
+        . 4 5 5 5 5 1 1 5 1 1 1 d 4 4 . 
+        . 4 d 5 1 1 5 5 5 1 1 1 5 5 4 . 
+        . 4 4 5 1 1 5 5 5 5 5 d 5 5 4 . 
+        . . 4 3 d 5 5 5 d 5 5 d d d 4 . 
+        . 4 5 5 d 5 5 5 d d d 5 5 4 . . 
+        . 4 5 5 d 3 5 d d 3 d 5 5 4 . . 
+        . 4 4 d d 4 d d d 4 3 d d 4 . . 
+        . . 4 5 4 4 4 4 4 4 4 4 4 . . . 
+        . 4 5 4 . . 4 4 4 . . . 4 4 . . 
+        . 4 4 . . . . . . . . . . 4 4 . 
+        `,img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . b b . b b b . . . . . 
+        . . . . b 1 1 b 1 1 1 b . . . . 
+        . . b b 3 1 1 d d 1 d d b b . . 
+        . b 1 1 d d b b b b b 1 1 b . . 
+        . b 1 1 1 b . . . . . b d d b . 
+        . . 3 d d b . . . . . b d 1 1 b 
+        . b 1 d 3 . . . . . . . b 1 1 b 
+        . b 1 1 b . . . . . . b b 1 d b 
+        . b 1 d b . . . . . . b d 3 d b 
+        . b b d d b . . . . b d d d b . 
+        . b d d d d b . b b 3 d d 3 b . 
+        . . b d d 3 3 b d 3 3 b b b . . 
+        . . . b b b d d d d d b . . . . 
+        . . . . . . b b b b b . . . . . 
+        `],
+    100,
+    false
+    )
+    for (let value of spriteutils.getSpritesWithin(SpriteKind.Enemy, 74, otherSprite)) {
+        statusbars.getStatusBarAttachedTo(StatusBarKind.EnemyHealth, value).value += -15
+    }
+})
+function setPlayerTileMapPosition () {
+    playerColumn = playerColumn % 16
+    playerRow = playerRow % 16
+    if (playerColumn < 0) {
+        playerColumn += 16
+    }
+    if (playerRow < 0) {
+        playerRow += 16
+    }
+    tiles.placeOnTile(playerSprite, tiles.getTileLocation(playerColumn, playerRow))
+}
+scene.onOverlapTile(SpriteKind.Enemy, sprites.vehicle.roadHorizontal, function (sprite, location) {
+    if (!(tiles.tileAtLocationIsWall(location))) {
+        sprite.setFlag(SpriteFlag.GhostThroughWalls, false)
+    }
+})
+controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
+    playerRow += 1
+    setPlayerTileMapPosition()
+})
+controller.menu.onEvent(ControllerButtonEvent.Pressed, function () {
+    playerSprite.sayText("" + playerSprite.tilemapLocation().column + ", " + playerSprite.tilemapLocation().row)
+    info.setScore(sprites.allOfKind(SpriteKind.Player).length)
+})
+sprites.onOverlap(SpriteKind.SmallCalibre, SpriteKind.Enemy, function (sprite, otherSprite) {
+    statusbars.getStatusBarAttachedTo(StatusBarKind.EnemyHealth, otherSprite).value += -3
+    sprites.destroy(sprite)
+})
+function generateProjectile (projectileType: number, targetSprite: Sprite, shootingSprite: Sprite, speed: number) {
+    projectile = sprites.create(projectileSpriteImageList[projectileType], projectileSpriteKindList[projectileType])
     projectile.setPosition(shootingSprite.x, shootingSprite.y)
     projectile.setFlag(SpriteFlag.GhostThroughWalls, true)
-    spriteutils.setVelocityAtAngle(projectile, spriteutils.angleFrom(shootingSprite, targetSprite), 200)
-    projectile.setFlag(SpriteFlag.AutoDestroy, true)
+    projectile.follow(targetSprite, 100)
+    projectile.lifespan = 1500
 }
 function displayTilePlacementIndicator (indicatorType: number) {
     animation.runImageAnimation(
@@ -160,38 +253,17 @@ function displayTilePlacementIndicator (indicatorType: number) {
     true
     )
 }
-sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function (sprite, otherSprite) {
-    statusbars.getStatusBarAttachedTo(StatusBarKind.EnemyHealth, otherSprite).value += -10
-    sprites.destroy(sprite)
-})
 function generateTower (towerType: number) {
-    towerSprite = sprites.create(img`
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . b b b b . . . . . . 
-        . . . . . b b f f b b . . . . . 
-        . . . . . b f 2 2 f b . . . . . 
-        . . . . . b f 2 2 f b . . . . . 
-        . . . . . b b f f b b . . . . . 
-        . . . . . . b b b b . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        `, SpriteKind.Turret)
+    towerSprite = sprites.create(towerSpriteImageList[towerType], towerSpriteKindList[towerType])
     towerSprite.z = 10
     tiles.placeOnTile(towerSprite, playerSprite.tilemapLocation())
-    spriteutils.onSpriteUpdateInterval(towerSprite, 500, function (sprite) {
+    spriteutils.onSpriteUpdateInterval(towerSprite, towerSpriteUpdatePeriod[towerType], function (sprite) {
         nearbyEnemyList = spriteutils.getSpritesWithin(SpriteKind.Enemy, 50, sprite)
         if (nearbyEnemyList.length > 0) {
-            generateLaser(1, nearbyEnemyList[0], sprite, 5, 1, 510)
-            generateProjectile(1, nearbyEnemyList[0], sprite)
+            generateProjectile(towerType, nearbyEnemyList[0], sprite, towerSpriteUpdatePeriod[towerType] / 5)
+            generateBarrel(towerType, nearbyEnemyList[0], sprite, barrelSpriteSizeList[towerType], 1, towerSpriteUpdatePeriod[towerType] + 1)
         } else {
-            generateLaser(1, sprite, sprite, 5, 1, 510)
+            generateBarrel(towerType, sprite, sprite, barrelSpriteSizeList[towerType], 1, towerSpriteUpdatePeriod[towerType] + 1)
         }
     })
 }
@@ -200,17 +272,105 @@ let enemySprite: Sprite = null
 let nearbyEnemyList: Sprite[] = []
 let towerSprite: Sprite = null
 let projectile: Sprite = null
-let playerSprite: Sprite = null
+let explosionSprite: Sprite = null
 let playerColumn = 0
-let playerRow = 0
+let playerSprite: Sprite = null
 let barrelSprite: Sprite = null
+let playerRow = 0
 let currentTileIndicatorSprite: Sprite = null
 let fireRate = 0
 let enemySpeed = 0
 let emptyTile = false
 let towerType = 0
+let projectileSpriteKindList: number[] = []
+let projectileSpriteImageList: Image[] = []
 let indicatorSpriteAnimationList: Image[][] = []
+let barrelSpriteSizeList: number[] = []
+let barrelSpriteImageList: Image[] = []
+let towerSpriteUpdatePeriod: number[] = []
+let towerSpriteKindList: number[] = []
+let towerSpriteImageList: Image[] = []
+towerSpriteImageList = [img`
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . b b b b . . . . . . 
+    . . . . . b b f f b b . . . . . 
+    . . . . . b f 2 2 f b . . . . . 
+    . . . . . b f 2 2 f b . . . . . 
+    . . . . . b b f f b b . . . . . 
+    . . . . . . b b b b . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    `, img`
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . b . . . . . . . . b . . . 
+    . . . . b f f . . f f b . . . . 
+    . . . . f b b f f b b f . . . . 
+    . . . . . b f c c f b . . . . . 
+    . . . . . b f c c f b . . . . . 
+    . . . . f b b f f b b f . . . . 
+    . . . . b f f . . f f b . . . . 
+    . . . b . . . . . . . . b . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    `]
+towerSpriteKindList = [SpriteKind.Turret, SpriteKind.Launcher]
+towerSpriteUpdatePeriod = [300, 2500]
+barrelSpriteImageList = [img`
+    2 
+    `, img`
+    c c 
+    c c 
+    `]
+barrelSpriteSizeList = [6, 8]
 indicatorSpriteAnimationList = [assets.animation`myAnim0`, assets.animation`myAnim1`]
+projectileSpriteImageList = [img`
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . 4 4 . . . . . . . 
+    . . . . . . 4 5 5 4 . . . . . . 
+    . . . . . . 2 5 5 2 . . . . . . 
+    . . . . . . . 2 2 . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    `, img`
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . b b . . . . . . . 
+    . . . . . . . b b . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    . . . . . . . . . . . . . . . . 
+    `]
+projectileSpriteKindList = [SpriteKind.SmallCalibre, SpriteKind.RocketCalibre]
 towerType = 0
 emptyTile = true
 enemySpeed = 30
@@ -238,13 +398,15 @@ currentTileIndicatorSprite.setFlag(SpriteFlag.Invisible, true)
 scene.setBackgroundColor(1)
 tiles.setCurrentTilemap(tilemap`level1`)
 generatePlayer()
-setPlayerTileMapPosition(4, 5)
+setPlayerTileMapPosition()
 game.onUpdate(function () {
-    for (let value of sprites.allOfKind(SpriteKind.Turret)) {
-        emptyTile = true
-        if (playerSprite.overlapsWith(value)) {
-            emptyTile = false
-            break;
+    for (let kindValue of towerSpriteKindList) {
+        for (let value of sprites.allOfKind(kindValue)) {
+            emptyTile = true
+            if (playerSprite.overlapsWith(value)) {
+                emptyTile = false
+                break;
+            }
         }
     }
 })
@@ -254,6 +416,13 @@ game.onUpdate(function () {
         currentTileIndicatorSprite.setFlag(SpriteFlag.Invisible, false)
     } else {
         currentTileIndicatorSprite.setFlag(SpriteFlag.Invisible, true)
+    }
+})
+game.onUpdate(function () {
+    for (let value of sprites.allOfKind(SpriteKind.SmallCalibre)) {
+        if (Math.abs(value.vx) == 0 && Math.abs(value.vy) == 0) {
+            sprites.destroy(value)
+        }
     }
 })
 game.onUpdateInterval(2000, function () {
@@ -288,7 +457,4 @@ game.onUpdateInterval(2000, function () {
     statusbar = statusbars.create(20, 4, StatusBarKind.EnemyHealth)
     statusbar.max = 100
     statusbar.attachToSprite(enemySprite)
-})
-forever(function () {
-	
 })
