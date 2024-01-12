@@ -1,0 +1,24 @@
+{
+    "name": "towerdefence-tree-83a9193dda80fa6cbb0181b784cc33dbe1f584f6",
+    "dependencies": {
+        "device": "*",
+        "towerdefence": "github:pawan-bilkhu/towerdefence"
+    },
+    "files": [
+        "main.blocks",
+        "main.ts",
+        "README.md",
+        "assets.json"
+    ],
+    "testFiles": [
+        "test.ts"
+    ],
+    "targetVersions": {
+        "target": "1.12.46",
+        "targetId": "arcade"
+    },
+    "supportedTargets": [
+        "arcade"
+    ],
+    "preferredEditor": "blocksprj"
+}
